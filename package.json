@@ -9,26 +9,39 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["workspaceContains:.git", "onStartupFinished"],
-  "main": "./extension.js",
+  "activationEvents": [
+    "workspaceContains:.git",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
   "contributes": {
-    "commands": [{
-      "command": "custom-logger.helloWorld",
-      "title": "Hello World"
-    }
-  ]
+    "commands": [
+      {
+        "command": "custom-logger.helloWorld",
+        "title": "Hello World"
+      }
+    ]
   },
   "scripts": {
+    "build": "node build.js",
+    "prepublish": "npm run build",
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "vscode-test"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rkverma94/custom-logger.git"
+  },
+  "author": "Rakesh Kumar Verma",
+  "publisher": "RakeshKumarVerma",
   "devDependencies": {
-    "@types/vscode": "^1.98.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "eslint": "^9.21.0",
+    "@types/vscode": "^1.98.0",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.25.1",
+    "eslint": "^9.21.0"
   }
 }

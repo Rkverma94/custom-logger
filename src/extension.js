@@ -2,6 +2,8 @@ const vscode = require('vscode');
 const fs = require('fs')
 const path = require('path');
 const childprocess = require('node:child_process');
+const logger = require('./logger.js');
+const helper = require('./helper.js');
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -15,35 +17,9 @@ function activate(context) {
 			return;
 		} 
 		vscode.window.showInformationMessage('Git Extension found!!');
-	
-		console.log('git : ', git);
-		console.log('git repositories length : ', git.repositories);
-	
-		/**not working as onDidRunGitCommand is not reliable */
-		// git.onDidRunGitCommand(cmd => {
-		// 	console.log('cmd : ', cmd);
-		// 	if(cmd.command == 'commit') {
-		// 		const repo = git.repositories[0];
-		// 		console.log('repo state: ', repo?.state);
-		// 		console.log('repo HEAD : ', repo?.state.HEAD);
-		// 		const head = repo?.state.HEAD;
-		// 	}
-		// });
-		//git.repositories.forEach(repo => {
-			//this fires on every save so it is useless for our use case.
-			/*
-			repo.state.onDidChange(() => {
-				console.log('-state--', repo.state);
-				console.log('-head--', repo.state.HEAD);
-				const head = repo.state.HEAD;
-				if(head && head.commit) {
-					logCommit(head.commit, repo.rootUri.fsPath);
-				}
-			});*/
-		//});
 
 		//make a file watcher for git log head
-		let gitpath = searchForDirectory();
+		let gitpath = helper.searchForDirectory();
 		const headPath = path.join(gitpath, 'logs', 'HEAD');
 		if(fs.existsSync(headPath)) {
 			fs.watch(headPath, eventType => {
@@ -51,7 +27,7 @@ function activate(context) {
 					const logData = fs.readFileSync(headPath, 'utf-8');
 					const lastLine = logData.trim().split('\n').pop();
 					// console.log('lastline commit message : ', lastLine.split('commit: ')[1]);
-					logCommit(gitpath, lastLine);
+					logger.logCommit(gitpath, lastLine);
 					//run git merge --no-commit --no-ff <branch-name> 
 					const res = findingMergeConflict('master');
 					vscode.window.showInformationMessage(res.message);
@@ -91,50 +67,7 @@ function findingMergeConflict(targetbranch) {
 		hasConflict : false,
 		message : "No merge conflicts detected!"
 	}
-}
-
-function searchForDirectory(dir=process.cwd()) {
-	const workspaceFolder = vscode.workspace.workspaceFolders;
-	if(!workspaceFolder) {
-		vscode.window.showErrorMessage('No workspace folder found.');
-		throw new Error('No workspace folders to open');
-	}
-	vscode.window.showInformationMessage('Workspace folder is found');
-	for(let folder of workspaceFolder) {
-		const folderPath = folder.uri.path;
-		let curDir = folderPath;
-		while(true) {
-			const gitPath = path.join(curDir, '.git');
-			if(fs.existsSync(gitPath) && fs.statSync(gitPath).isDirectory()) {
-				console.log('git path found!!!');
-				return gitPath;
-			}
-			const parentDir = path.dirname(curDir);
-			if(parentDir == curDir) break;
-			curDir = parentDir;
-		}
-	}
-	console.log('no git found');
-	return null;
 } 
-
-/**
- * @param {string} gitpath
- * @param {string} commitMsg
- */
-function logCommit(gitpath, commitMsg) {
-	const logMessage = `${commitMsg.split('commit: ')[1]} on ${new Date()}`;
-	let gitParentPath = path.dirname(gitpath);
-	const logDir = path.join(gitParentPath, 'commit_logs');
-	const logFile = path.join(logDir, 'logs.txt');
-	if(!fs.existsSync(logDir)) {
-		const response = fs.mkdirSync(logDir, { recursive: true });
-	}
-	const stream = fs.createWriteStream(logFile, { flags: 'a' });
-	stream.write(`${logMessage} \n`);
-	vscode.window.showInformationMessage(logMessage);
-	process.on('exit', () => stream.end());
-}
 
 // This method is called when your extension is deactivated
 function deactivate() {}
