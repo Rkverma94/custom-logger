@@ -38,6 +38,10 @@ Initial release of ...
 commit logger
 Merge conflict detection on master branch
 
+### 1.0.1
+
+Commit logger changed - instead of logs.txt, now it is creating logs.json with different keys for better reporting
+
 ## For more information
  Contact me at rkvermacs94@gmail.com
 
