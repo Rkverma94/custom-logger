@@ -2,7 +2,7 @@
   "name": "git-commit-logger",
   "displayName": "git-commit-logger",
   "description": "generate logs based on different actions",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -19,6 +19,10 @@
       {
         "command": "custom-logger.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "custom-logger.setTargetBranch",
+        "title": "Set Target Branch for checking merge conflict"
       }
     ]
   },

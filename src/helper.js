@@ -15,7 +15,6 @@ function searchForDirectory() {
 		while(true) {
 			const gitPath = path.join(curDir, '.git');
 			if(fs.existsSync(gitPath) && fs.statSync(gitPath).isDirectory()) {
-				console.log('git path found!!!');
 				return gitPath;
 			}
 			const parentDir = path.dirname(curDir);
@@ -27,6 +26,16 @@ function searchForDirectory() {
 	return null;
 }
 
+async function setCurrentDirectory() {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+	if(!workspaceFolders) {	
+		vscode.window.showErrorMessage('no workspace found');
+		throw new Error('No workspace folders to open');
+	}
+	process.chdir(workspaceFolders[0].uri.path);
+}
+
 module.exports = {
-    searchForDirectory
+    searchForDirectory,
+	setCurrentDirectory
 }
