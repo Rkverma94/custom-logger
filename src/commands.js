@@ -1,19 +1,27 @@
 const vscode = require('vscode');
 const child_process = require('node:child_process');
 const helper = require('./helper.js');
-let targetBranch = "";
+let targetBranch = null;
 
 async function setTargetBranch() {
     await helper.setCurrentDirectory();
     const branches = await getGitBranches();
-    const targetBranch = await vscode.window.showQuickPick(branches, {
+    setTargetBranchValue(await vscode.window.showQuickPick(branches, {
         placeHolder: "Select a target branch to merge",
-    });
+    }));
     if(targetBranch) {
         vscode.window.showInformationMessage(`Selected target branch: ${targetBranch}`);
         return targetBranch;
     }
     return null;
+}
+
+function setTargetBranchValue(branch) {
+    targetBranch = branch;
+}
+
+function getTargetBranch() {
+    return targetBranch;
 }
 
 function getGitBranches() {
@@ -28,8 +36,7 @@ function getGitBranches() {
         });
     });
 }
-
 module.exports = {
     setTargetBranch,
-    targetBranch
+    getTargetBranch
 }

@@ -91,18 +91,24 @@ var require_commands = __commonJS({
     var vscode2 = require("vscode");
     var child_process = require("node:child_process");
     var helper2 = require_helper();
-    var targetBranch = "";
+    var targetBranch = null;
     async function setTargetBranch() {
       await helper2.setCurrentDirectory();
       const branches = await getGitBranches();
-      const targetBranch2 = await vscode2.window.showQuickPick(branches, {
+      setTargetBranchValue(await vscode2.window.showQuickPick(branches, {
         placeHolder: "Select a target branch to merge"
-      });
-      if (targetBranch2) {
-        vscode2.window.showInformationMessage(`Selected target branch: ${targetBranch2}`);
-        return targetBranch2;
+      }));
+      if (targetBranch) {
+        vscode2.window.showInformationMessage(`Selected target branch: ${targetBranch}`);
+        return targetBranch;
       }
       return null;
+    }
+    function setTargetBranchValue(branch) {
+      targetBranch = branch;
+    }
+    function getTargetBranch() {
+      return targetBranch;
     }
     function getGitBranches() {
       return new Promise((resolve, reject) => {
@@ -118,7 +124,7 @@ var require_commands = __commonJS({
     }
     module2.exports = {
       setTargetBranch,
-      targetBranch
+      getTargetBranch
     };
   }
 });
@@ -131,7 +137,7 @@ var childprocess = require("node:child_process");
 var logger = require_logger();
 var helper = require_helper();
 var commands = require_commands();
-function activate(context) {
+async function activate(context) {
   setTimeout(() => {
     const gitExtension = vscode.extensions.getExtension("vscode.git")?.exports;
     const git = gitExtension?.getAPI(1);
@@ -148,7 +154,7 @@ function activate(context) {
           const logData = fs.readFileSync(headPath, "utf-8");
           const lastLine = logData.trim().split("\n").pop();
           logger.logCommit(gitpath, lastLine);
-          const res = findingMergeConflict(commands.targetBranch);
+          const res = findingMergeConflict();
           vscode.window.showInformationMessage(res.message);
         }
       });
@@ -162,7 +168,12 @@ function activate(context) {
     }));
   }, 3e3);
 }
-function findingMergeConflict(targetbranch) {
+function findingMergeConflict() {
+  let targetBranch = commands.getTargetBranch();
+  if (!targetBranch) {
+    vscode.window.showErrorMessage(`target branch is not set`);
+    return;
+  }
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders) {
     vscode.window.showErrorMessage("no workspace found");
@@ -170,8 +181,10 @@ function findingMergeConflict(targetbranch) {
   }
   process.chdir(workspaceFolders[0].uri.path);
   const currentBranch = childprocess.execSync("git branch --show-current").toString().trim();
-  const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetbranch}`).toString().trim();
-  const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD refs/heads/${targetbranch}`).toString().trim();
+  console.log(`currentbranch : ${currentBranch}, target branch : ${targetBranch}`);
+  const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetBranch}`).toString().trim();
+  console.log(`merge base : ${mergeBase}`);
+  const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD refs/heads/${targetBranch}`).toString().trim();
   if (mergeResult.includes("CONFLICT") || mergeResult.includes("=======")) {
     return {
       hasConflict: true,

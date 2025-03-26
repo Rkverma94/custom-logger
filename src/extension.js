@@ -8,7 +8,7 @@ const commands = require('./commands.js');
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+async function activate(context) {
 	setTimeout(() => {
 		const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 		const git = gitExtension?.getAPI(1);
@@ -29,7 +29,7 @@ function activate(context) {
 					// console.log('lastline commit message : ', lastLine.split('commit: ')[1]);
 					logger.logCommit(gitpath, lastLine);
 					//run git merge --no-commit --no-ff <branch-name> 
-					const res = findingMergeConflict(commands.targetBranch);
+					const res =  findingMergeConflict();
 					vscode.window.showInformationMessage(res.message);
 				}
 			})
@@ -48,7 +48,12 @@ function activate(context) {
 	}, 3000);
 }
 
-function findingMergeConflict(targetbranch) {
+function findingMergeConflict() {
+	let targetBranch = commands.getTargetBranch();
+	if(!targetBranch) {
+		vscode.window.showErrorMessage(`target branch is not set`);
+		return;
+	}
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if(!workspaceFolders) {	
 		vscode.window.showErrorMessage('no workspace found');
@@ -56,9 +61,12 @@ function findingMergeConflict(targetbranch) {
 	}
 	process.chdir(workspaceFolders[0].uri.path);
 	const currentBranch = childprocess.execSync("git branch --show-current").toString().trim();
+	console.log(`currentbranch : ${currentBranch}, target branch : ${targetBranch}`);
 	//finding common ancestor - basically we are finding common commit for both branch
-	const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetbranch}`).toString().trim();
-	const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD refs/heads/${targetbranch}`).toString().trim();
+	const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetBranch}`).toString().trim();
+	console.log(`merge base : ${mergeBase}`);
+	const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD refs/heads/${targetBranch}`).toString().trim();
+
 	//Check for conflict markers
 	if(mergeResult.includes("CONFLICT") || mergeResult.includes("=======")) {
 		return {
