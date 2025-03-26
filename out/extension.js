@@ -22,7 +22,6 @@ var require_helper = __commonJS({
         while (true) {
           const gitPath = path2.join(curDir, ".git");
           if (fs2.existsSync(gitPath) && fs2.statSync(gitPath).isDirectory()) {
-            console.log("git path found!!!");
             return gitPath;
           }
           const parentDir = path2.dirname(curDir);
@@ -96,7 +95,6 @@ var require_commands = __commonJS({
     async function setTargetBranch() {
       await helper2.setCurrentDirectory();
       const branches = await getGitBranches();
-      console.log(`branch list : ${JSON.stringify(branches)}`);
       const targetBranch2 = await vscode2.window.showQuickPick(branches, {
         placeHolder: "Select a target branch to merge"
       });
@@ -172,11 +170,8 @@ function findingMergeConflict(targetbranch) {
   }
   process.chdir(workspaceFolders[0].uri.path);
   const currentBranch = childprocess.execSync("git branch --show-current").toString().trim();
-  console.log(`current-branch : ${currentBranch}`);
   const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetbranch}`).toString().trim();
-  console.log(`merge base : ${mergeBase}`);
   const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD refs/heads/${targetbranch}`).toString().trim();
-  console.log(`mergeResult : ${mergeResult}`);
   if (mergeResult.includes("CONFLICT") || mergeResult.includes("=======")) {
     return {
       hasConflict: true,
