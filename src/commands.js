@@ -28,7 +28,6 @@ function getGitBranches() {
         });
     });
 }
-
 module.exports = {
     setTargetBranch,
     targetBranch
