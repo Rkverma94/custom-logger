@@ -17,7 +17,6 @@ Each log entry includes the commit message and timestamp.
 Detects potential merge conflicts before they occur.
 
 Monitors commits to the master branch and warns about possible conflicts.
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
 
 ## Requirements
@@ -41,6 +40,9 @@ Merge conflict detection on master branch
 ### 1.0.1
 
 Commit logger changed - instead of logs.txt, now it is creating logs.json with different keys for better reporting
+
+### updates
+new command added - set target branch for checking merge conflict aginst selected branch
 
 ## For more information
  Contact me at rkvermacs94@gmail.com

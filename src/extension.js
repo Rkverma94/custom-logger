@@ -4,7 +4,7 @@ const path = require('path');
 const childprocess = require('node:child_process');
 const logger = require('./logger.js');
 const helper = require('./helper.js');
-
+const commands = require('./commands.js');
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -29,7 +29,7 @@ function activate(context) {
 					// console.log('lastline commit message : ', lastLine.split('commit: ')[1]);
 					logger.logCommit(gitpath, lastLine);
 					//run git merge --no-commit --no-ff <branch-name> 
-					const res = findingMergeConflict('master');
+					const res = findingMergeConflict(commands.targetBranch);
 					vscode.window.showInformationMessage(res.message);
 				}
 			})
@@ -39,6 +39,12 @@ function activate(context) {
 		context.subscriptions.push(vscode.commands.registerCommand('custom-logger.helloWorld', function () {
 			vscode.window.showInformationMessage('Hello World from custom-logger!');
 		}));
+
+
+		context.subscriptions.push(vscode.commands.registerCommand('custom-logger.setTargetBranch', () => {
+			commands.setTargetBranch();
+		}));
+
 	}, 3000);
 }
 
@@ -50,12 +56,9 @@ function findingMergeConflict(targetbranch) {
 	}
 	process.chdir(workspaceFolders[0].uri.path);
 	const currentBranch = childprocess.execSync("git branch --show-current").toString().trim();
-	console.log(`current-branch : ${currentBranch}`);
 	//finding common ancestor - basically we are finding common commit for both branch
 	const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetbranch}`).toString().trim();
-	console.log(`merge base : ${mergeBase}`);
 	const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD refs/heads/${targetbranch}`).toString().trim();
-	console.log(`mergeResult : ${mergeResult}`);
 	//Check for conflict markers
 	if(mergeResult.includes("CONFLICT") || mergeResult.includes("=======")) {
 		return {

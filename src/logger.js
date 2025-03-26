@@ -2,21 +2,16 @@ const path = require('path');
 const fs = require('fs');
 const vscode = require('vscode');
 const childprocess = require('node:child_process');
-
+const helper = require('./helper.js');
 /**
  * @param {string} gitpath
  * @param {string} commitMsg
  */
-function logCommit(gitpath, commitMsg) {
+async function logCommit(gitpath, commitMsg) {
+    await helper.setCurrentDirectory();
     let messageObj = {};
     messageObj.message = commitMsg.split('commit: ')[1];
     messageObj.date = new Date();
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if(!workspaceFolders) {	
-        vscode.window.showErrorMessage('no workspace found');
-        throw new Error('No workspace folders to open');
-    }
-    process.chdir(workspaceFolders[0].uri.path);
     messageObj.branchName = childprocess.execSync("git branch --show-current").toString().trim();
     let gitParentPath = path.dirname(gitpath);
 	const logDir = path.join(gitParentPath, 'commit_logs');
