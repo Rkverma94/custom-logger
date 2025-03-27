@@ -6,12 +6,14 @@ function findingMergeConflict() {
 	let targetBranch = commands.getTargetBranch();
 	if(!targetBranch) {
 		vscode.window.showErrorMessage(`target branch is not set`);
+        vscode.window.showInformationMessage(`please run "Set Target Branch for checking merge conflict" command`);
 		return;
 	}
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if(!workspaceFolders) {	
 		vscode.window.showErrorMessage('no workspace found');
 		throw new Error('No workspace folders to open');
+
 	}
 	process.chdir(workspaceFolders[0].uri.path);
 	childprocess.execSync(`git fetch origin ${targetBranch}`);

@@ -139,6 +139,7 @@ var require_mergeConflictChecker = __commonJS({
       let targetBranch = commands2.getTargetBranch();
       if (!targetBranch) {
         vscode2.window.showErrorMessage(`target branch is not set`);
+        vscode2.window.showInformationMessage(`please run "Set Target Branch for checking merge conflict" command`);
         return;
       }
       const workspaceFolders = vscode2.workspace.workspaceFolders;
