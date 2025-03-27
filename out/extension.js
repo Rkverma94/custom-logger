@@ -129,6 +129,48 @@ var require_commands = __commonJS({
   }
 });
 
+// src/mergeConflictChecker.js
+var require_mergeConflictChecker = __commonJS({
+  "src/mergeConflictChecker.js"(exports2, module2) {
+    var commands2 = require_commands();
+    var vscode2 = require("vscode");
+    var childprocess2 = require("node:child_process");
+    function findingMergeConflict2() {
+      let targetBranch = commands2.getTargetBranch();
+      if (!targetBranch) {
+        vscode2.window.showErrorMessage(`target branch is not set`);
+        return;
+      }
+      const workspaceFolders = vscode2.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        vscode2.window.showErrorMessage("no workspace found");
+        throw new Error("No workspace folders to open");
+      }
+      process.chdir(workspaceFolders[0].uri.path);
+      childprocess2.execSync(`git fetch origin ${targetBranch}`);
+      const currentBranch = childprocess2.execSync("git branch --show-current").toString().trim();
+      console.log(`currentbranch : ${currentBranch}, target branch : ${targetBranch}`);
+      const mergeBase = childprocess2.execSync(`git merge-base HEAD ${targetBranch}`).toString().trim();
+      console.log(`merge base : ${mergeBase}`);
+      const mergeResult = childprocess2.execSync(`git merge-tree ${mergeBase} HEAD origin/${targetBranch}`).toString().trim();
+      console.log(`mergeResult : ${mergeResult}`);
+      if (mergeResult.includes("CONFLICT") || mergeResult.includes("=======")) {
+        return {
+          hasConflict: true,
+          message: "Potential merge conflicts detected!!"
+        };
+      }
+      return {
+        hasConflict: false,
+        message: "No merge conflicts detected!"
+      };
+    }
+    module2.exports = {
+      findingMergeConflict: findingMergeConflict2
+    };
+  }
+});
+
 // src/extension.js
 var vscode = require("vscode");
 var fs = require("fs");
@@ -137,6 +179,7 @@ var childprocess = require("node:child_process");
 var logger = require_logger();
 var helper = require_helper();
 var commands = require_commands();
+var findingMergeConflict = require_mergeConflictChecker();
 async function activate(context) {
   setTimeout(() => {
     const gitExtension = vscode.extensions.getExtension("vscode.git")?.exports;
@@ -154,8 +197,12 @@ async function activate(context) {
           const logData = fs.readFileSync(headPath, "utf-8");
           const lastLine = logData.trim().split("\n").pop();
           logger.logCommit(gitpath, lastLine);
-          const res = findingMergeConflict();
-          vscode.window.showInformationMessage(res.message);
+          const res = findingMergeConflict.findingMergeConflict();
+          if (res.hasConflict) {
+            vscode.window.showErrorMessage(res.message);
+          } else {
+            vscode.window.showInformationMessage(res.message);
+          }
         }
       });
     }
@@ -167,36 +214,6 @@ async function activate(context) {
       commands.setTargetBranch();
     }));
   }, 3e3);
-}
-function findingMergeConflict() {
-  let targetBranch = commands.getTargetBranch();
-  if (!targetBranch) {
-    vscode.window.showErrorMessage(`target branch is not set`);
-    return;
-  }
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (!workspaceFolders) {
-    vscode.window.showErrorMessage("no workspace found");
-    throw new Error("No workspace folders to open");
-  }
-  process.chdir(workspaceFolders[0].uri.path);
-  childprocess.execSync(`git fetch origin ${targetBranch}`);
-  const currentBranch = childprocess.execSync("git branch --show-current").toString().trim();
-  console.log(`currentbranch : ${currentBranch}, target branch : ${targetBranch}`);
-  const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetBranch}`).toString().trim();
-  console.log(`merge base : ${mergeBase}`);
-  const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD origin/${targetBranch}`).toString().trim();
-  console.log(`mergeResult : ${mergeResult}`);
-  if (mergeResult.includes("CONFLICT") || mergeResult.includes("=======")) {
-    return {
-      hasConflict: true,
-      message: "Potential merge conflicts detected!!"
-    };
-  }
-  return {
-    hasConflict: false,
-    message: "No merge conflicts detected!"
-  };
 }
 function deactivate() {
 }
