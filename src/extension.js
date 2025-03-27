@@ -60,13 +60,14 @@ function findingMergeConflict() {
 		throw new Error('No workspace folders to open');
 	}
 	process.chdir(workspaceFolders[0].uri.path);
+	childprocess.execSync(`git fetch origin ${targetBranch}`);
 	const currentBranch = childprocess.execSync("git branch --show-current").toString().trim();
 	console.log(`currentbranch : ${currentBranch}, target branch : ${targetBranch}`);
 	//finding common ancestor - basically we are finding common commit for both branch
 	const mergeBase = childprocess.execSync(`git merge-base HEAD ${targetBranch}`).toString().trim();
 	console.log(`merge base : ${mergeBase}`);
-	const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD refs/heads/${targetBranch}`).toString().trim();
-
+	const mergeResult = childprocess.execSync(`git merge-tree ${mergeBase} HEAD origin/${targetBranch}`).toString().trim();
+	console.log(`mergeResult : ${mergeResult}`);
 	//Check for conflict markers
 	if(mergeResult.includes("CONFLICT") || mergeResult.includes("=======")) {
 		return {
